@@ -1,51 +1,45 @@
 # Current System Status
 
-**Last Updated**: 2026-09-27  
-**Current Milestone Completed**: Milestone 2.1 (Multi-Source Telemetry & Network Tool Integration)  
-**Verification Status**: Verified by user execution
+**Last Updated**: 2026-10-07  
+**Current Milestone Completed**: Milestone 2.2 (Flagged Incident Log Ingestion & Multi-Agent Incident Analysis Engine)  
+**Verification Status**: Verified by user test execution (10/10 automated tests passing + Live 3-Agent Collaborative LLM reasoning verified with Google Gemini)  
 
 ---
 
-## 1. Completed Components
+## 1. Completed & Implemented Components
 
-- **FastAPI Core (`app/main.py`)**: Application bootstrap, routing configuration, health check endpoint (`/health`).
-- **Alert Models (`app/models/alert.py`)**: `Alert` schema validation, `AlertAcknowledgement` response contract.
-- **Alert Ingestion Route (`app/api/alerts.py`)**: `POST /api/v1/alerts` returning `202 Accepted` on valid input, `422 Unprocessable Content` on schema mismatch.
-- **Investigation Models (`app/models/investigation.py`)**: `ProcessEvent`, `NetworkEvent`, `Evidence`, and `InvestigationResult` schemas.
-- **Read-Only Telemetry Tools**:
-  - `get_process_logs` in [`app/tools/process_tools.py`](file:///home/astute/Projects/AgenticSOC/app/tools/process_tools.py).
-  - `get_network_logs` in [`app/tools/network_tools.py`](file:///home/astute/Projects/AgenticSOC/app/tools/network_tools.py).
-- **Investigation Agent (`app/agents/investigator.py`)**: Multi-source correlation agent performing cross-telemetry pivots (Process -> PID -> Outbound Socket C2) and synthesizing structured verdicts.
-- **Investigation Service (`app/services/investigation_service.py`)**: Coordinating alert receipt and investigator execution.
-- **Automated Test Suite (`tests/test_investigation.py`)**: 7 passing unit & integration tests covering process tools, network tools, multi-source correlation, and HTTP endpoints.
-- **Architectural Documentation**: ADR-001, ADR-002, Agent Specs, Tool Specs, and living history in `documentation/`.
+- **FastAPI Core (`app/main.py`)**: Application bootstrap, health check endpoint (`/health`), alerts router, and incidents router.
+- **Incident & Flagged Log Models (`app/models/incident.py`)**: `FlaggedLog`, `Incident`, `TimelineEvent`, `MitreItem`, `AffectedEntities`, and `IncidentReport` schemas.
+- **Alert Ingestion Models (`app/models/alert.py`, `app/api/alerts.py`)**: `Alert` schema, `AlertAcknowledgement`, and `POST /api/v1/alerts`.
+- **3-Agent Collaborative LLM Pipeline (`app/agents/multi_agent_pipeline.py`)**:
+  - `ForensicInvestigatorAgent` (`app/agents/forensic_investigator.py`): DFIR specialist for execution tree reconstruction and payload deobfuscation.
+  - `ThreatAnalystAgent` (`app/agents/threat_analyst.py`): CTI specialist mapping observables to MITRE ATT&CK and evaluating blast radius.
+  - `ResponseAdvisorAgent` (`app/agents/response_advisor.py`): Incident Commander synthesizing verdicts and tactical containment checklists.
+- **Incident Analysis API Route (`app/api/incidents.py`)**: `POST /api/v1/incidents/analyze` returning full structured `IncidentReport`.
+- **CLI Incident Runner (`run_incident_analysis.py`)**: Terminal tool executing live multi-agent reasoning on arbitrary incident log files with colorized output.
+- **Read-Only Telemetry Tools (`app/tools/`)**: `get_process_logs` and `get_network_logs`.
+- **Automated Test Suites (`tests/`)**:
+  - `tests/test_incident_analysis.py`: Unit and API tests for multi-agent incident analysis, timeline sequencing, and MITRE mapping.
+  - `tests/test_investigation.py`: Unit and integration tests for telemetry tools and alert investigation.
+- **Living Documentation**: ADR-001, ADR-002, ADR-003, `documentation/api/incident-api.md`, `documentation/api/alert-api.md`, `documentation/agents/multi-agent-system.md`, `documentation/development/`.
 
 ---
 
 ## 2. Components In Progress
 
-- None (Milestone 2.1 verified, awaiting next milestone proposal).
+- None (Milestone 2.2 verified).
 
 ---
 
 ## 3. Planned Components
 
-- **Milestone 2.2 (Proposed)**: LLM Brain Integration (Function/Tool Calling with Google Gemini / PydanticAI).
-- **Milestone 3.0 (Planned)**: Orchestrator Agent for multi-agent dispatch, plan formation, and dynamic triage routing.
-- **Milestone 4.0 (Planned)**: Threat Analysis Agent for MITRE ATT&CK mapping, severity recalculation, and blast radius estimation.
-- **Milestone 5.0 (Planned)**: Human-in-the-Loop review console and recommended response generation.
-- **Infrastructure Milestones (Planned)**: Persistent database layer, asynchronous Celery/Redis background queueing, authentication (API key / mTLS).
+- **Milestone 3.0 (Planned)**: Direct Kafka Topic Streaming Consumer Worker service (`aiokafka`).
+- **Milestone 4.0 (Planned)**: Automated Threat Intelligence Enrichment (VirusTotal / AbuseIPDB / AlienVault OTX integration).
+- **Milestone 5.0 (Planned)**: Human-in-the-Loop review console and remediation execution manager.
 
 ---
 
-## 4. Known Issues & Limitations
+## 4. Next Approved Step
 
-- Telemetry logs are queried from in-memory structured mock data.
-- User identity/authentication telemetry tools are not yet implemented.
-- Investigations run inline within the service call rather than via an asynchronous task worker.
+- Select between **Milestone 3.0 (Real-Time Kafka Ingestion Worker)** or **Milestone 4.0 (Threat Intelligence Enrichment Tools)**.
 
----
-
-## 5. Next Approved Step
-
-- Awaiting user instruction on the next milestone.

@@ -1,5 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
+
+
+def get_utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class Alert(BaseModel):
@@ -16,4 +20,4 @@ class AlertAcknowledgement(BaseModel):
     status: str = "accepted"
     alert_id: str
     message: str = "Alert received and queued for investigation"
-    received_at: datetime = Field(default_factory=datetime.utcnow)
+    received_at: datetime = Field(default_factory=get_utc_now)

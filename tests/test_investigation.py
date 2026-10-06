@@ -1,6 +1,7 @@
 from datetime import datetime
 import pytest
 from fastapi.testclient import TestClient
+
 from app.main import app
 from app.models.alert import Alert
 from app.agents.investigator import InvestigationAgent
@@ -47,7 +48,8 @@ def test_get_network_logs_tool_pid_filter():
     assert all(e.process_id == 5820 for e in net_events)
 
 
-def test_investigator_correlates_process_and_network_evidence():
+@pytest.mark.anyio
+async def test_investigator_correlates_process_and_network_evidence():
     """Verify InvestigationAgent correlates suspicious process with outbound network C2 traffic."""
     agent = InvestigationAgent()
     alert = Alert(
@@ -60,7 +62,7 @@ def test_investigator_correlates_process_and_network_evidence():
         description="PowerShell executed with an encoded command",
     )
 
-    result = agent.investigate(alert)
+    result = await agent.investigate(alert)
 
     assert result.alert_id == "ALERT-001"
     assert result.host == "DESKTOP-01"
@@ -76,7 +78,8 @@ def test_investigator_correlates_process_and_network_evidence():
     assert "malicious.site" in (net_ev.data["domain"] or "")
 
 
-def test_investigator_handles_missing_logs():
+@pytest.mark.anyio
+async def test_investigator_handles_missing_logs():
     """Verify InvestigationAgent returns inconclusive verdict when no telemetry is found."""
     agent = InvestigationAgent()
     alert = Alert(
@@ -88,7 +91,7 @@ def test_investigator_handles_missing_logs():
         description="Alert for non-existent host",
     )
 
-    result = agent.investigate(alert)
+    result = await agent.investigate(alert)
 
     assert result.alert_id == "ALERT-002"
     assert result.verdict == "inconclusive"

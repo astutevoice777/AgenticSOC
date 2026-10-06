@@ -35,4 +35,4 @@ class InvestigationService:
         """
         Invokes the Investigation Agent to investigate the alert.
         """
-        return self.agent.investigate(alert)
+        return await self.agent.investigate(alert)

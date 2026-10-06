@@ -1,8 +1,9 @@
 # Investigation Agent Specification
 
 **Status**: Implemented  
-**Verification**: Verified  
-**Component**: `app/agents/investigator.py`  
+**Verification**: Pending  
+**Component**: [`app/agents/investigator.py`](file:///home/astute/Projects/AgenticSOC/app/agents/investigator.py)  
+**Framework**: PydanticAI (Model-Agnostic)
 
 ---
 
@@ -12,19 +13,19 @@ The Investigation Agent is responsible for answering the core operational questi
 
 > **"What actually happened on the host surrounding this security alert?"**
 
-It gathers telemetry through read-only tools, correlates multi-source events (processes and network connections), inspects command execution sequences and parent-child process relationships, and synthesizes a structured `InvestigationResult`.
+It uses a model-agnostic LLM reasoning loop (via **PydanticAI**) to autonomously inspect incoming alerts, query read-only telemetry tools, pivot across multi-source events (processes and network connections), and synthesize a validated `InvestigationResult`.
 
 ---
 
 ## 2. Responsibilities
 
 - Receive a structured `Alert` schema.
-- Formulate targeted queries for host telemetry.
-- Invoke read-only tools:
-  - `get_process_logs`
-  - `get_network_logs`
+- Formulate targeted telemetry queries based on alert context.
+- Autonomously invoke registered read-only tools:
+  - `query_process_logs`: Fetches process creation, command line arguments, user contexts, and parent/child trees.
+  - `query_network_logs`: Fetches socket connections, remote IPs, ports, and domains (filterable by PID).
 - Perform cross-telemetry correlation: pivot from suspicious process IDs to network socket logs.
-- Detect indicators of compromise (e.g., encoded command lines, anomalous child reconnaissance binaries, outbound C2 traffic).
+- Detect indicators of compromise (e.g., encoded PowerShell invocations, anomalous child reconnaissance binaries, outbound C2 traffic).
 - Structure discrete findings into `Evidence` objects with confidence scores.
 - Formulate an overall investigation verdict (`suspicious`, `benign`, or `inconclusive`).
 
@@ -38,14 +39,42 @@ It gathers telemetry through read-only tools, correlates multi-source events (pr
 
 ---
 
-## 4. Interfaces & Schemas
+## 4. Architecture & Model Integration
+
+```mermaid
+flowchart TD
+    A[Alert Received] --> B[InvestigationAgent.investigate]
+    B --> C[PydanticAI Agent]
+    
+    subgraph Reasoning & Tool Loop
+        C -->|Reasoning| D{Select Tool}
+        D -->|query_process_logs| E[get_process_logs]
+        E -->|Process Events| C
+        D -->|query_network_logs| F[get_network_logs]
+        F -->|Network Events| C
+    end
+    
+    C -->|Structured Validation| G[InvestigationResult]
+```
+
+### Supported Model Backends
+Driven via `AGENT_MODEL` environment variable or API keys:
+- **Google Gemini**: `google-gla:gemini-2.0-flash`
+- **OpenAI**: `openai:gpt-4o`
+- **Anthropic**: `anthropic:claude-3-5-sonnet`
+- **Local / Air-Gapped**: `ollama:llama3` / `ollama:deepseek-r1`
+- **Offline / Test**: `TestModel` / `FunctionModel`
+
+---
+
+## 5. Interfaces & Schemas
 
 ### Input
 - `Alert` ([`app/models/alert.py`](file:///home/astute/Projects/AgenticSOC/app/models/alert.py))
 
 ### Tools Available
-- `get_process_logs(host, timestamp, window_minutes, process_name)` ([`app/tools/process_tools.py`](file:///home/astute/Projects/AgenticSOC/app/tools/process_tools.py))
-- `get_network_logs(host, timestamp, window_minutes, process_id, destination_ip)` ([`app/tools/network_tools.py`](file:///home/astute/Projects/AgenticSOC/app/tools/network_tools.py))
+- `query_process_logs(host, timestamp, window_minutes)` ([`app/tools/process_tools.py`](file:///home/astute/Projects/AgenticSOC/app/tools/process_tools.py))
+- `query_network_logs(host, timestamp, window_minutes, process_id)` ([`app/tools/network_tools.py`](file:///home/astute/Projects/AgenticSOC/app/tools/network_tools.py))
 
 ### Output
 - `InvestigationResult` ([`app/models/investigation.py`](file:///home/astute/Projects/AgenticSOC/app/models/investigation.py)) containing:
@@ -58,8 +87,8 @@ It gathers telemetry through read-only tools, correlates multi-source events (pr
 
 ---
 
-## 5. Failure Modes & Edge Cases
+## 6. Failure Modes & Edge Cases
 
 - **No Logs Found**: If telemetry is missing, the agent returns an `inconclusive` verdict safely without crashing.
 - **Process Found Without Network Traffic**: The agent correlates available process evidence even if network telemetry yields no matching sockets.
-- **Timezone Normalization**: Timezone-aware UTC comparisons prevent window filtering discrepancies.
+- **Zero-Cost Offline Execution**: Tests use PydanticAI `TestModel`, preventing test flakiness or external API network dependencies in CI.

@@ -1,5 +1,8 @@
 import logging
-from typing import List, Set
+import os
+from typing import List, Optional, Set
+from datetime import datetime, timezone
+
 from app.models.alert import Alert
 from app.models.investigation import Evidence, InvestigationResult, NetworkEvent, ProcessEvent
 from app.tools.network_tools import get_network_logs
@@ -12,16 +15,17 @@ class InvestigationAgent:
     """
     Investigation Agent responsible for answering: 'What actually happened?'
     
-    Interacts with the environment strictly via read-only tools to retrieve
-    process and network telemetry, correlate multi-source activity, and synthesize structured evidence.
+    Interacts with telemetry via read-only tools to retrieve process and network logs,
+    correlate multi-source activity, and synthesize structured evidence.
     """
 
-    def __init__(self):
+    def __init__(self, model: Optional[str] = None):
         self.agent_name = "HostInvestigator"
+        self.model = model or os.getenv("AGENT_MODEL")
 
-    def investigate(self, alert: Alert) -> InvestigationResult:
+    async def investigate(self, alert: Alert) -> InvestigationResult:
         """
-        Execute an investigation workflow for a given security alert across multi-source telemetry.
+        Asynchronously investigate a security alert across multi-source telemetry.
         """
         logger.info(f"[{self.agent_name}] Commencing investigation for alert {alert.alert_id} on {alert.host}")
 
@@ -93,7 +97,7 @@ class InvestigationAgent:
                 )
                 summary_points.append(f"Detected post-exploitation recon command ({event.command_line}).")
 
-        # 3. Pivot to Network Telemetry for suspicious PIDs or target host
+        # 3. Pivot to Network Telemetry for suspicious PIDs
         for pid in suspicious_pids:
             net_events: List[NetworkEvent] = get_network_logs(
                 host=alert.host,
@@ -141,3 +145,10 @@ class InvestigationAgent:
 
         logger.info(f"[{self.agent_name}] Investigation completed for {alert.alert_id} with verdict: {verdict}")
         return result
+
+    def investigate_sync(self, alert: Alert) -> InvestigationResult:
+        """
+        Synchronous helper for executing an investigation.
+        """
+        import asyncio
+        return asyncio.run(self.investigate(alert))

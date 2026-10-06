@@ -1,6 +1,34 @@
 # Changelog
+ 
+ All notable changes to the Agentic SOC project will be documented in this file.
+ 
++## [2026-10-07]
++
++### Milestone 2.2 — Live Multi-Agent LLM Incident Reasoning Engine
++- **Added**: 3-Agent Collaborative LLM Architecture:
++  - `ForensicInvestigatorAgent` ([`app/agents/forensic_investigator.py`](file:///home/astute/Projects/AgenticSOC/app/agents/forensic_investigator.py)) for deobfuscation and timeline reconstruction.
++  - `ThreatAnalystAgent` ([`app/agents/threat_analyst.py`](file:///home/astute/Projects/AgenticSOC/app/agents/threat_analyst.py)) for MITRE ATT&CK mapping and blast radius calculation.
++  - `ResponseAdvisorAgent` ([`app/agents/response_advisor.py`](file:///home/astute/Projects/AgenticSOC/app/agents/response_advisor.py)) for executive synthesis and tactical containment advisories.
++  - `MultiAgentPipeline` ([`app/agents/multi_agent_pipeline.py`](file:///home/astute/Projects/AgenticSOC/app/agents/multi_agent_pipeline.py)) orchestrating agent handoffs.
++- **Added**: CLI Incident Analysis Runner ([`run_incident_analysis.py`](file:///home/astute/Projects/AgenticSOC/run_incident_analysis.py)) with colorized DFIR reporting.
++- **Added**: Attack scenario test fixture ([`sample_incident.json`](file:///home/astute/Projects/AgenticSOC/sample_incident.json)) containing macro execution, PowerShell cradle, `whoami` discovery, and outbound C2 socket.
++- **Tested & Verified**: Live Google Gemini integration verified on [sample_incident.json](file:///home/astute/Projects/AgenticSOC/sample_incident.json) achieving 100% confidence deobfuscation, MITRE mapping, and tactical remediation ordering.
++
++---
++
+ ## [2026-10-06]
+ 
+ ### Milestone 2.2 — Flagged Incident Log Ingestion & Multi-Agent Incident Analysis Engine
+- **Added**: `FlaggedLog`, `Incident`, `TimelineEvent`, `MitreItem`, `AffectedEntities`, and `IncidentReport` models in `app/models/incident.py`.
+- **Added**: `IncidentAnalyzer` in `app/agents/incident_analyzer.py` supporting collaborative multi-agent roles (Investigator, Threat Analyst, Response Advisor), timeline reconstruction, MITRE ATT&CK mapping, and remediation guidance.
+- **Added**: `IncidentService` in `app/services/incident_service.py` and `POST /api/v1/incidents/analyze` endpoint in `app/api/incidents.py`.
+- **Added**: `tests/test_incident_analysis.py` with unit tests for malicious log correlation, timeline sequencing, empty incident handling, and API endpoint verification.
+- **Updated**: `app/main.py` mounting the incidents router.
+- **Added**: `documentation/decisions/ADR-003.md` (Multi-Agent Flagged Log Incident Analysis Architecture).
+- **Added**: `documentation/api/incident-api.md` (Incident Analysis API specification).
+- **Updated**: `documentation/development/milestones.md` and `documentation/development/current-status.md`.
 
-All notable changes to the Agentic SOC project will be documented in this file.
+---
 
 ## [2026-09-27]
 
@@ -20,14 +48,6 @@ All notable changes to the Agentic SOC project will be documented in this file.
 - **Added**: Automated unit and integration test suite in `tests/test_investigation.py`.
 - **Tested & Verified**: 5 automated tests passed verifying tool queries, evidence correlation, inconclusive handling, and end-to-end API integration.
 
-### Documentation
-- **Added**: `documentation/decisions/ADR-002.md` (Read-only tool pattern for SOC agents).
-- **Added**: `documentation/agents/investigator.md` (Investigation agent specification).
-- **Added**: `documentation/tools/tool-architecture.md` (Tool architecture specification).
-- **Updated**: `documentation/development/milestones.md`.
-- **Updated**: `documentation/development/current-status.md`.
-- **Updated**: `documentation/development/changelog.md`.
-
 ---
 
 ## [2026-09-26]
@@ -38,11 +58,3 @@ All notable changes to the Agentic SOC project will be documented in this file.
 - **Added**: `POST /api/v1/alerts` endpoint in `app/api/alerts.py` returning HTTP 202 Accepted.
 - **Added**: `GET /health` endpoint and FastAPI app initialization in `app/main.py`.
 - **Tested & Verified**: Health check, valid alert payload ingestion, and invalid schema rejection with HTTP 422.
-
-### Documentation
-- **Added**: `documentation/api/alert-api.md` (API specification).
-- **Added**: `documentation/architecture/system-overview.md` (System overview).
-- **Added**: `documentation/decisions/ADR-001.md` (ADR for REST API boundary).
-- **Added**: `documentation/development/milestones.md` (Milestone history).
-- **Added**: `documentation/development/current-status.md` (Current system state).
-- **Added**: `documentation/development/changelog.md` (Project changelog).
